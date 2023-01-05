@@ -7,10 +7,7 @@ import { Wrapper } from "./App.styled";
 import {Modal} from "./Modal/Modal";
 import { ToastContainer, toast } from 'react-toastify';
 import {fetchImg} from '../services/api'
-// import axios from 'axios';
 import 'react-toastify/dist/ReactToastify.css';
-
-
 
 
 export function App() {
@@ -22,6 +19,7 @@ export function App() {
 
 
 useEffect(() => {
+  let ignore = false;
   if(search === ''){
     setStatus('idle')
   }
@@ -30,10 +28,13 @@ useEffect(() => {
         setStatus('loading');
         const res = await fetchImg(search, page);
         if (res.data.total === 0) {
-          throw new Error('Images with your query was not found');
+          throw new Error('Images not found');
         }
-        setGallery(prevState => [...prevState, ...res.data.hits]);
-        setStatus('finished');
+        if(!ignore){
+          setGallery(prevState => [...prevState, ...getGalleryItems(res.data.hits)]);
+          setStatus('finished');
+        }
+        
       } catch (error) {
               toast.error(error.message, {
                 position: "top-center",
@@ -48,7 +49,11 @@ useEffect(() => {
         setStatus('idle');
       }
     }
-  btnFetch()
+    if(!!search){
+      btnFetch();
+    }
+  
+  return () => {ignore = true}
 },[search, page])
 
   const hadleSubmit = (value) => {
@@ -64,6 +69,12 @@ useEffect(() => {
  const loadMore = () => {
    setPage(prevState => prevState + 1)
   }
+
+  const getGalleryItems = (data) => {
+    return data.map(el => ({
+      id: el.id, webformatURL: el.webformatURL, largeImageURL: el.largeImageURL,
+    }));
+  };
 
   return (
     <Wrapper>
